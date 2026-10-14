@@ -14,6 +14,8 @@ from backend.app.models.business import (
     TablesSummary,
 )
 
+from backend.app.utils.time import now_utc
+
 router = APIRouter(prefix="/businesses", tags=["Businesses"])
 
 
@@ -74,8 +76,8 @@ async def get_business(
         menu_summary=business.get("menu_summary", ""),
         slot_minutes=int(business.get("slot_minutes", 60)),
         booking_policy=business.get("booking_policy", ""),
-        created_at=business.get("created_at", datetime.utcnow()),
-        updated_at=business.get("updated_at", datetime.utcnow()),
+        created_at=business.get("created_at", now_utc()),
+        updated_at=business.get("updated_at", now_utc()),
     )
 
     return BusinessDetailResponse(business=biz_obj, tables_summary=summary)
@@ -95,7 +97,7 @@ async def update_business(
             detail={"error": "NO_UPDATES_PROVIDED", "message": "No valid fields provided for update."},
         )
 
-    update_data["updated_at"] = datetime.utcnow()
+    update_data["updated_at"] = now_utc()
 
     result = await db["businesses"].find_one_and_update(
         {"$or": [{"id": business_id}, {"_id": business_id}]},
@@ -122,6 +124,6 @@ async def update_business(
         menu_summary=result.get("menu_summary", ""),
         slot_minutes=int(result.get("slot_minutes", 60)),
         booking_policy=result.get("booking_policy", ""),
-        created_at=result.get("created_at", datetime.utcnow()),
-        updated_at=result.get("updated_at", datetime.utcnow()),
+        created_at=result.get("created_at", now_utc()),
+        updated_at=result.get("updated_at", now_utc()),
     )

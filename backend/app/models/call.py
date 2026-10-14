@@ -5,12 +5,15 @@ from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
+from backend.app.utils.time import now_utc
+
+
 class TranscriptItem(BaseModel):
     """Single message line in a call transcript."""
 
     role: str = Field(..., description="'customer' or 'assistant'")
     message: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=now_utc)
 
 
 class CallCreateRequest(BaseModel):

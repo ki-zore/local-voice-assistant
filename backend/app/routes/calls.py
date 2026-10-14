@@ -17,6 +17,8 @@ from backend.app.models.call import (
     UnansweredQuestionRequest,
 )
 
+from backend.app.utils.time import now_utc
+
 router = APIRouter(tags=["Calls & Unanswered Questions"])
 
 
@@ -27,7 +29,7 @@ async def create_call(
 ) -> CallResponse:
     """Record the initiation of a voice phone call."""
     call_id = f"call_{uuid.uuid4().hex[:12]}"
-    started_at = request.started_at or datetime.utcnow()
+    started_at = request.started_at or now_utc()
 
     doc = {
         "id": call_id,
@@ -79,7 +81,7 @@ async def list_calls(
                 TranscriptItem(
                     role=t["role"],
                     message=t["message"],
-                    timestamp=t.get("timestamp", datetime.utcnow()),
+                    timestamp=t.get("timestamp", now_utc()),
                 )
                 for t in r.get("transcript", [])
             ],
@@ -112,7 +114,7 @@ async def get_call(
             TranscriptItem(
                 role=t["role"],
                 message=t["message"],
-                timestamp=t.get("timestamp", datetime.utcnow()),
+                timestamp=t.get("timestamp", now_utc()),
             )
             for t in call.get("transcript", [])
         ],
@@ -161,7 +163,7 @@ async def update_call(
             TranscriptItem(
                 role=t["role"],
                 message=t["message"],
-                timestamp=t.get("timestamp", datetime.utcnow()),
+                timestamp=t.get("timestamp", now_utc()),
             )
             for t in updated_call.get("transcript", [])
         ],
@@ -185,7 +187,7 @@ async def log_call_unanswered_question(
         )
 
     clean_q = request.question.strip()
-    now_ts = datetime.utcnow()
+    now_ts = now_utc()
 
     # Append to call document
     await db["calls"].update_one(

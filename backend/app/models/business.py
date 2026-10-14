@@ -5,6 +5,9 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
+from backend.app.utils.time import now_utc
+
+
 class TimeRange(BaseModel):
     """Opening and closing time for a single day (24-hour HH:MM format)."""
 
@@ -34,8 +37,8 @@ class Business(BaseModel):
     menu_summary: str = ""
     slot_minutes: int = 60
     booking_policy: str = ""
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=now_utc)
+    updated_at: datetime = Field(default_factory=now_utc)
 
     model_config = ConfigDict(populate_by_name=True)
 

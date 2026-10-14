@@ -537,6 +537,23 @@ async def cancel_booking_by_phone(
 ) -> BookingResponse:
     """Cancel a booking by matching customer_phone, date, and time in business timezone."""
     phone = normalize_phone(request.customer_phone)
+    phone_digits = re.sub(r"\D", "", phone)
+    phone_candidates = [phone]
+    if phone.startswith("+"):
+        phone_candidates.append(phone[1:])
+    else:
+        phone_candidates.append(f"+{phone}")
+
+    phone_filter: dict = {"customer_phone": {"$in": phone_candidates}}
+    if len(phone_digits) >= 10:
+        last10 = phone_digits[-10:]
+        phone_filter = {
+            "$or": [
+                {"customer_phone": {"$in": phone_candidates}},
+                {"customer_phone": {"$regex": f"{re.escape(last10)}$"}},
+            ]
+        }
+
     business = await get_business_or_404(db, request.business_id)
 
     # Compute UTC slot_start for lookup (don't check future strictly so customers can cancel today's bookings)
@@ -544,14 +561,14 @@ async def cancel_booking_by_phone(
         business, request.date, request.time, check_future=False
     )
 
-    booking = await db["bookings"].find_one(
-        {
-            "business_id": request.business_id,
-            "customer_phone": phone,
-            "slot_start": slot_start_utc,
-            "status": BookingStatus.CONFIRMED.value,
-        }
-    )
+    query = {
+        "business_id": request.business_id,
+        "slot_start": slot_start_utc,
+        "status": BookingStatus.CONFIRMED.value,
+        **phone_filter,
+    }
+
+    booking = await db["bookings"].find_one(query)
 
     if not booking:
         raise HTTPException(

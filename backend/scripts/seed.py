@@ -1,7 +1,7 @@
 """Idempotent seed script to initialize demo cafe data in MongoDB."""
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 import sys
 
@@ -118,14 +118,14 @@ async def seed_demo_data(target_db_name: str | None = None) -> str:
             "Reservations are in 60-minute slots. Tables are held for 15 minutes past booking time. "
             "Cancellations are free. Groups over 8 guests should call the cafe directly."
         ),
-        "updated_at": datetime.utcnow(),
+        "updated_at": datetime.now(timezone.utc),
     }
 
     await db["businesses"].update_one(
         {"$or": [{"id": DEMO_BUSINESS_ID}, {"_id": DEMO_BUSINESS_ID}]},
         {
             "$set": business_doc,
-            "$setOnInsert": {"created_at": datetime.utcnow()},
+            "$setOnInsert": {"created_at": datetime.now(timezone.utc)},
         },
         upsert=True,
     )
