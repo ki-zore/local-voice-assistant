@@ -100,26 +100,44 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 # Upgrade pip
 python -m pip install --upgrade pip
 
-# Install backend dependencies
+# Install dependencies (Backend and Voice)
 pip install -r backend/requirements.txt
+pip install -r voice/requirements.txt
 ```
 
 ---
 
 ## Execution Phases Overview
 
-- **Phase 0 (Current)**: Scaffolding, docker-compose, environment configuration, Windows setup.
-- **Phase 1**: FastAPI backend with Motor, MongoDB compound unique indexes, booking validation, seed script, and pytest suites.
-- **Phase 2**: Text-only LLM tool-calling verification with Ollama `qwen2.5:7b-instruct` across 10 scripted scenarios.
-- **Phase 3**: Voice pipeline with Silero VAD, faster-whisper STT, Ollama LLM, Piper TTS, and Pipecat orchestration.
+- **Phase 0 (Done)**: Scaffolding, docker-compose, environment configuration, Windows setup.
+- **Phase 1 (Done)**: FastAPI backend with Motor, MongoDB compound unique indexes, booking validation, seed script, and pytest suites.
+- **Phase 2 (Done)**: Text-only LLM tool-calling verification with Ollama `qwen2.5:7b-instruct` across 13 scripted scenarios.
+- **Phase 3 (Current)**: Voice pipeline with Silero VAD, Faster-Whisper STT, Ollama LLM, Piper TTS, and Pipecat orchestration.
 - **Phase 4**: Next.js admin dashboard with live booking updates, call transcripts, and unanswered question triage.
 - **Phase 5**: Telephony planning via SIP trunk.
 
 ---
 
-## Phase 0 Verification
+## Running Phase 3 (Voice Pipeline)
 
-To verify Phase 0 setup:
-1. Check that `.env`, `docker-compose.yml`, `backend/requirements.txt`, `voice/requirements.txt`, and `voice/prompts/receptionist.md` exist.
-2. Confirm Ollama is running and `qwen2.5:7b-instruct` is available (`ollama list`).
-3. Verify Docker Desktop can be started to launch `docker-compose up -d`.
+### 1. Start Prerequisites
+1. **MongoDB**: `docker-compose up -d`
+2. **FastAPI Backend**: `.\.venv\Scripts\uvicorn backend.app.main:app --host 127.0.0.1 --port 8000`
+3. **Ollama**: Ensure `ollama run qwen2.5:7b-instruct` or the Ollama Windows tray app is running.
+
+### 2. Live Interactive Voice Mode (Microphone + Speaker)
+Talk directly to the AI receptionist using your computer microphone and speaker:
+```powershell
+.\.venv\Scripts\python voice/pipeline.py --verbose
+```
+- The assistant greets you with: *"Hello! Thank you for calling Demo Cafe. How can I help you today?"*
+- Speak into your microphone (e.g. *"What are your hours?"*, *"Do you have Wi-Fi?"*, *"I'd like to reserve a table for 2 tomorrow at 7 PM"*).
+- Silero VAD detects speech start and end; Faster-Whisper transcribes speech; Ollama executes tools against the backend; Piper speaks the response aloud.
+- Press `Ctrl+C` to end the call and view the session latency summary.
+
+### 3. Automated Voice Pipeline Latency Benchmark
+Run the end-to-end voice latency test suite across 4 representative phone call queries:
+```powershell
+.\.venv\Scripts\python voice/tests/benchmark_voice.py
+```
+This tests the full audio loop: Synthesizes spoken queries -> Faster-Whisper STT -> Ollama ReceptionistAgent (with backend tool execution) -> Piper TTS, reporting exact latency for every stage.
