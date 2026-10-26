@@ -237,3 +237,24 @@ async def list_unanswered_questions(
         )
         for r in records
     ]
+
+
+@router.delete("/unanswered/{question_id}", status_code=status.HTTP_200_OK)
+async def delete_unanswered_question(
+    question_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict:
+    """Delete / resolve a logged unanswered question after triaging or adding to FAQs."""
+    result = await db["unanswered_questions"].delete_one(
+        {"$or": [{"id": question_id}, {"_id": question_id}]}
+    )
+    if result.deleted_count == 0:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "QUESTION_NOT_FOUND",
+                "message": f"Unanswered question '{question_id}' not found.",
+            },
+        )
+    return {"status": "deleted", "id": question_id}
+
